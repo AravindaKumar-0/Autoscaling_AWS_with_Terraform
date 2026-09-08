@@ -43,13 +43,12 @@ pipeline {
                 input message: 'Terraform plan looks good. Apply changes?', ok: 'Apply'
             }
         }
-
-        stage('Terraform Apply') {
+        stage('Terraform Destroy') {
             steps {
-                sh 'terraform apply -input=false tfplan'
+                sh 'terraform destroy -auto-approve -input=false'
             }
         }
-    }
+      
 
     post {
         success {
