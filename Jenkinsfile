@@ -32,36 +32,87 @@ pipeline {
             }
         }
 
-        stage('Terraform Destroy Plan') {
+        stage('Select Action') {
             steps {
-                sh 'terraform plan -destroy -input=false'
+                script {
+                    env.TERRAFORM_ACTION = input(
+                        message: 'Select Terraform action',
+                        parameters: [
+                            choice(
+                                name: 'ACTION',
+                                choices: ['APPLY', 'DESTROY'],
+                                description: 'Choose whether to apply or destroy infrastructure'
+                            )
+                        ]
+                    )
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                script {
+                    if (env.TERRAFORM_ACTION == 'APPLY') {
+                        sh 'terraform plan -input=false -out=tfplan'
+                    } else {
+                        sh 'terraform plan -destroy -input=false -out=destroy.tfplan'
+                    }
+                }
             }
         }
 
         stage('Approval') {
             steps {
-                input(
-                    message: 'This will destroy the Terraform infrastructure. Continue?',
-                    ok: 'Destroy'
-                )
+                script {
+                    if (env.TERRAFORM_ACTION == 'APPLY') {
+                        input(
+                            message: 'Terraform plan looks good. Apply changes?',
+                            ok: 'Apply'
+                        )
+                    } else {
+                        input(
+                            message: 'WARNING: This will destroy all Terraform infrastructure. Continue?',
+                            ok: 'Destroy'
+                        )
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            when {
+                expression {
+                    env.TERRAFORM_ACTION == 'APPLY'
+                }
+            }
+            steps {
+                sh 'terraform apply -input=false tfplan'
             }
         }
 
         stage('Terraform Destroy') {
+            when {
+                expression {
+                    env.TERRAFORM_ACTION == 'DESTROY'
+                }
+            }
             steps {
-                sh 'terraform destroy -auto-approve -input=false'
+                sh 'terraform apply -input=false destroy.tfplan'
             }
         }
     }
 
     post {
-
         success {
-            echo 'Terraform infrastructure destroyed successfully.'
+            echo 'Terraform operation completed successfully.'
         }
 
         failure {
-            echo 'Terraform destroy failed. Check the Jenkins console output.'
+            echo 'Terraform pipeline failed. Check the Jenkins console output.'
+        }
+
+        aborted {
+            echo 'Terraform pipeline was aborted.'
         }
     }
 }
