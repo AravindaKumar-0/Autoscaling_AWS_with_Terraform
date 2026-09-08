@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        AWS_ACCESS_KEY_ID     = credentials('aws-terraform')
+        AWS_DEFAULT_REGION    = 'us-east-1'
+    }
+
     stages {
 
         stage('Checkout') {
