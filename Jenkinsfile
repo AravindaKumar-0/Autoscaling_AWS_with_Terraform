@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        AWS_ACCESS_KEY_ID     = credentials('aws-terraform')
-        AWS_DEFAULT_REGION    = 'us-east-1'
+        AWS_ACCESS_KEY_ID = credentials('aws-terraform')
+        AWS_DEFAULT_REGION = 'us-east-1'
     }
 
     stages {
@@ -32,31 +32,36 @@ pipeline {
             }
         }
 
-        stage('Terraform Plan') {
+        stage('Terraform Destroy Plan') {
             steps {
-                sh 'terraform plan -input=false -out=tfplan'
+                sh 'terraform plan -destroy -input=false'
             }
         }
 
         stage('Approval') {
             steps {
-                input message: 'Terraform plan looks good. Apply changes?', ok: 'Apply'
+                input(
+                    message: 'This will destroy the Terraform infrastructure. Continue?',
+                    ok: 'Destroy'
+                )
             }
         }
+
         stage('Terraform Destroy') {
             steps {
                 sh 'terraform destroy -auto-approve -input=false'
             }
         }
-      
+    }
 
     post {
+
         success {
-            echo 'Terraform deployment completed successfully.'
+            echo 'Terraform infrastructure destroyed successfully.'
         }
 
         failure {
-            echo 'Terraform pipeline failed. Check the Jenkins console output.'
+            echo 'Terraform destroy failed. Check the Jenkins console output.'
         }
     }
 }
