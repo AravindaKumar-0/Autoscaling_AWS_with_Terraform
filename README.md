@@ -56,7 +56,7 @@
 
 ## Setup / Run
 
-\```bash
+
 # 1. Clone
 git clone https://github.com/AravindaKumar-0/Autoscaling_AWS_with_Terraform.git
 
@@ -71,7 +71,7 @@ terraform plan
 
 # 4. Apply
 terraform apply
-\```
+
 
 ## Outputs
 
@@ -82,6 +82,5 @@ terraform apply
 
 ## Cleanup
 
-\```bash
 terraform destroy
-\```
+
